@@ -1,0 +1,34 @@
+networks:
+  frontend:
+    name: nginxproxy_frontend
+
+services:
+  nginx:
+    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
+    volumes:
+      - ./certs:/etc/nginx/certs
+      - ./my_proxy.conf:/etc/nginx/conf.d/my_proxy.conf
+      - ./web:/usr/share/nginx/html
+      - ./vhost.d:/etc/nginx/vhost.d
+      - ./htpasswd:/etc/nginx/htpasswd
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - frontend
+    restart: always
+    environment:
+      - DEFAULT_HOST=dummy.mysite.local
+  
+  letsencrypt:
+    container_name: letsencrypt
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    volumes_from:
+      - nginx
+    networks:
+      - frontend
+    restart: always

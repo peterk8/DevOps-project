@@ -1,0 +1,47 @@
+---
+- name: Deploy nginx-proxy with Docker Compose (Non-Root)
+  hosts: all
+  vars:
+    compose_file_path: "~/nginx-proxy/docker-compose.yml"
+    project_directory: "~/nginx-proxy"
+    mounted_folders:
+      - certs
+      - web
+      - vhost.d
+      - htpasswd
+
+  tasks:
+    # Step 1: Create project directory
+    - name: Create project directory
+      file:
+        path: "{{ project_directory }}"
+        state: directory
+        mode: '0755'
+
+    # Step 2: Create mounted folders
+    - name: Create mounted folders
+      file:
+        path: "{{ project_directory }}/{{ item }}"
+        state: directory
+        mode: '0755'
+      with_items: "{{ mounted_folders }}"
+
+    # Step 3: Copy the existing my_proxy.conf file
+    - name: Copy my_proxy.conf file
+      copy:
+        src: ./my_proxy.conf  # Path to the existing file in your playbook directory
+        dest: "{{ project_directory }}/my_proxy.conf"
+        mode: '0644'
+
+    # Step 4: Copy the Docker Compose file
+    - name: Copy the Docker Compose file
+      copy:
+        src: ./docker-compose.yml
+        dest: "{{ compose_file_path }}"
+        mode: '0644'
+
+    # Step 5: Start services with Docker Compose
+    - name: Start services with Docker Compose
+      command: docker-compose up -d
+      args:
+        chdir: "{{ project_directory }}"
